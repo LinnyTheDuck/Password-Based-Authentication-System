@@ -1,0 +1,4 @@
+src/*.class
+Reports/*
+!Reports/*.pdf
+src/rockyou.txt
