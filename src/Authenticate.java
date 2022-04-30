@@ -13,6 +13,7 @@ public class Authenticate {
 
     public static final String DELETE = "\033[F\u001b[0K"; // to remove passwords after they've been typed
 
+    private static int attempts = 0; // number of user attempts
     private static boolean choice = false; // auto default to false
 
     public static void main(String[] args) {
@@ -79,10 +80,10 @@ public class Authenticate {
                     + "Guidelines: \n- Password must not be commonly used \n- Password must be between 8 and 64 characters"
                     + WHITE);
             String password = br.readLine();
-            System.out.println(DELETE); // clear the screen
+            System.out.print(DELETE); // clear the screen
             System.out.println("Enter your Password again then press ENTER");
             String passwordConf = br.readLine();
-            System.out.println(DELETE); // clear the screen
+            System.out.print(DELETE); // clear the screen
 
             if (lengthp(password)) // 8 - 64 chars
                 if (notBanned(password)) // must not match in the banned passwords list
@@ -112,15 +113,20 @@ public class Authenticate {
 
     public static boolean login(BufferedReader br) {
         try {
-            int attempts = 0;
-            while (attempts < 5) { // 5 login attempts
-                System.out.println("Enter your Username then press ENTER.");
-                String username = br.readLine();
-                System.out.println("Enter your Password then press ENTER.");
-                String password = br.readLine();
-                System.out.println(DELETE); // clear the screen
-                if (detailsCorrect(username, password))
-                    return true;
+            System.out.println("Enter your Username then press ENTER.");
+            String username = br.readLine();
+            System.out.println("Enter your Password then press ENTER.");
+            String password = br.readLine();
+            System.out.print(DELETE); // clear the screen
+            if (detailsCorrect(username, password))
+                return true;
+            else {
+                System.out.println(RED + "Invalid details!" + WHITE);
+                attempts++;
+                if (attempts >= 5) { // 5 login attempts
+                    timer(); // 30 second timeout
+                    attempts = 0;
+                }
             }
         } catch (Exception e) {
             System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
@@ -194,5 +200,20 @@ public class Authenticate {
 
     public static boolean detailsCorrect(String username, String password) {
         return false;
+    }
+
+    // TIMER //
+    public static void timer() {
+        try {
+            int count = 30;
+            System.out.println("Timeout: " + count + " Seconds");
+            for (int i = count; count > 0; count--) {
+                Thread.sleep(1000);
+                System.out.println(DELETE + "Timeout: " + (count - 1) + " Seconds");
+            }
+        } catch (Exception e) {
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
+        }
     }
 }
