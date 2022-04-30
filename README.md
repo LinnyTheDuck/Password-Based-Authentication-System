@@ -9,5 +9,10 @@ You might need to `chmod 744 compile.sh` to run the bash file
 Run the .jar executable
 
 ## Todos
-- finish gui
-- implement backend
+- cover up password
+- double password authentication
+- write out un and password reqs
+- implement argon2
+- implement database?? or csv
+- login timeout 30 seconds
+- formatting
