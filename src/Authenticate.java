@@ -73,7 +73,7 @@ public class Authenticate {
                         if (notInDatabase(username)) // check if not already in database
                             UN = true;
                         else
-                            System.out.println(RED + "User already exists!");
+                            System.out.print(RED); // + "User already exists!");
                     else
                         System.out.println(RED + "Username contains profanity!");
                 else
@@ -182,6 +182,8 @@ public class Authenticate {
 
         username = username.replaceAll("_", ""); // remove underscores
 
+        // remove repeating u's or i's
+
         // go through the badwords list
         try {
             BufferedReader br = new BufferedReader(new FileReader("src/Word_Filter.csv"));
@@ -189,25 +191,57 @@ public class Authenticate {
             String[] split = line.split(",");// split and edit line
 
             while (line != null) { // while not finished reading
-                if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
-                    br.close();
-                    return true;
-                }
+                if(split.length == 1)
+                    if (username.contains(split[0])) { // if matches
+                        br.close();
+                        return false;
+                    }
+                else if(split.length == 2)
+                    if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
+                        br.close();
+                        return false;
+                    }
                 line = br.readLine();
                 if(line != null)
-                    split = line.split(",");// split and edit line
+                    split = line.split(","); // split and edit line
             }
             br.close();
         } catch (Exception e) {
-            if(!(e instanceof ArrayIndexOutOfBoundsException)){ // an arrayindexoutofbounds is expected
-                System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
-                e.printStackTrace();
-            }
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
         }
-        return false;
+        return true;
     }
 
     private static boolean notInDatabase(String username) {
+        try {
+            File f = new File("src/database.csv"); // check if cvs exists, if not the create it
+            if(!f.exists())
+                return true;
+            
+            // try open csv database and search for each split[0]
+            BufferedReader br = new BufferedReader(new FileReader("src/database.csv"));
+            String line = br.readLine();
+            String[] split = line.split(","); // split and edit line
+
+            while (line != null) { // while not finished reading
+                if (username.equals(split[0])) { // if matches
+                    br.close();
+                    return false;
+                }
+                line = br.readLine();
+                if(line != null)
+                    split = line.split(","); // split and edit line
+            }
+            br.close();
+            
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
+            //return true; // no csv database yet so exception thrown
+        }
         return true;
     }
 
@@ -241,7 +275,8 @@ public class Authenticate {
     private static String hash(String password) {
         byte[] salt = generateSalt16Byte();
         String hash = base64Encoding(generateArgon2id(password, salt));
-        return hash;
+        //return hash;
+        return password; // temporary
     }
 
     private static byte[] generateSalt16Byte() {
@@ -279,10 +314,51 @@ public class Authenticate {
 
     // DATABASE STUFF //
     private static void addUser(String username, String password) {
+        try {
+            File f = new File("src/database.csv"); // check if cvs exists, if not the create it
+            if(!f.exists())
+                f.createNewFile();
+                
+            FileWriter fw = new FileWriter(f, true); // append mode
+            BufferedWriter bw = new BufferedWriter(fw);
 
+            password = hash(password); // hash password
+            bw.write(username + "," + password); // insert username and password
+            bw.newLine();
+            bw.close();
+        } catch (Exception e) {
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
+        }
     }
 
     private static boolean detailsCorrect(String username, String password) {
+        try {
+            File f = new File("src/database.csv"); // check if cvs exists, if not the create it
+            if(!f.exists())
+                return false;
+            
+            // try open csv database and search for each split[0]
+            BufferedReader br = new BufferedReader(new FileReader("src/database.csv"));
+            String line = br.readLine();
+            String[] split = line.split(","); // split and edit line
+
+            while (line != null) { // while not finished reading
+                if (username.equals(split[0]) && hash(password).equals(split[1])) { // if matches
+                    br.close();
+                    return true;
+                }
+                line = br.readLine();
+                if(line != null)
+                    split = line.split(","); // split and edit line
+            }
+            br.close();
+            
+            return false;
+        } catch (Exception e) {
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
+        }
         return false;
     }
 
