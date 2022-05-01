@@ -182,9 +182,19 @@ public class Authenticate {
 
         username = username.replaceAll("_", ""); // remove underscores
 
-        // remove repeating letters to one instance
-        // check then do again with repeating letters to two instances
+        String usernameo = removeConsecutiveDuplicates(username);
+        String usernamet = removeConsecutiveDuplicatesDouble(username);
 
+        // System.out.println(usernameo);
+        // System.out.println(usernamet);
+        
+        Boolean one = check(usernameo); // remove repeating letters to one instance
+        Boolean two = check(usernamet); // check then do again with repeating letters to two instances
+
+        return (one && two); // if one of them is illegal then yep its ILLEGAL
+    }
+
+    private static boolean check(String username){
         // go through the badwords list
         try {
             BufferedReader br = new BufferedReader(new FileReader("src/Word_Filter.csv"));
@@ -211,6 +221,34 @@ public class Authenticate {
             e.printStackTrace();
         }
         return true;
+    }
+
+    public static String removeConsecutiveDuplicates(String input) {
+        if(input.length() <= 1)
+            return input;
+        if(input.charAt(0) == input.charAt(1))
+            return removeConsecutiveDuplicates(input.substring(1));
+        else
+            return input.charAt(0) + removeConsecutiveDuplicates(input.substring(1));
+    }
+
+    private static String removeConsecutiveDuplicatesDouble(String input) {
+        char[] array = input.toCharArray(); 
+        String output = "";
+        
+        if(input.length() <= 1)
+            return input;
+
+        for(int i = 0; i < array.length - 2; i++){
+            if(array[i] == array[i+1]){
+                if(array[i+1] != array[i+2])
+                    output += array[i]; // append i to output
+            } else
+                output += array[i]; // append i to output
+        }
+        output += array[array.length - 2];
+        output += array[array.length -1];
+        return output;
     }
 
     private static boolean notInDatabase(String username) {
@@ -274,9 +312,9 @@ public class Authenticate {
     // HASHING //
     private static String hash(String password) {
         byte[] salt = generateSalt16Byte();
-        String hash = base64Encoding(generateArgon2id(password, salt));
-        // return hash;
-        return hash; // temporary
+        //String hash = base64Encoding(generateArgon2id(password, salt));
+        //return hash;
+        return password; // temporary
     }
 
     private static byte[] generateSalt16Byte() {

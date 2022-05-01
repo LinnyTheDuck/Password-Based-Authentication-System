@@ -10,4 +10,3 @@ Run the .jar executable with `java -jar run.jar`
 
 ## Todos
 - implement argon2
-- improve profanity filter for double letters
