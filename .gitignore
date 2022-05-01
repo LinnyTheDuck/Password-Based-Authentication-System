@@ -1,4 +1,5 @@
 src/*.class
+src/Efficient_Bad_Word_Filter.java.txt
 Reports/*
 !Reports/*.pdf
 src/rockyou.txt

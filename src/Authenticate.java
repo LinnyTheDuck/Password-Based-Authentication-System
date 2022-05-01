@@ -1,17 +1,23 @@
 package src;
 
+//import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+//import org.bouncycastle.crypto.params.Argon2Parameters;
+
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.io.*;
 
 public class Authenticate {
-    public static final String RED = "\u001B[31m"; // to make things pretty :D
-    public static final String YELLOW = "\u001B[33m";
-    public static final String GREEN = "\u001B[32m";
-    public static final String CYAN = "\u001B[36m";
-    public static final String BLUE = "\u001B[34m";
-    public static final String PURPLE = "\u001B[35m";
-    public static final String WHITE = "\u001B[37m";
+    private static final String RED = "\u001B[31m"; // to make things pretty :D
+    private static final String YELLOW = "\u001B[33m";
+    private static final String GREEN = "\u001B[32m";
+    private static final String CYAN = "\u001B[36m";
+    private static final String BLUE = "\u001B[34m";
+    private static final String PURPLE = "\u001B[35m";
+    private static final String WHITE = "\u001B[37m";
 
-    public static final String DELETE = "\033[F\u001b[0K"; // to remove passwords after they've been typed
+    private static final String DELETE = "\033[F\u001b[0K"; // to remove passwords after they've been typed
 
     private static int attempts = 0; // number of user attempts
     private static boolean choice = false; // auto default to false
@@ -50,7 +56,7 @@ public class Authenticate {
         }
     }
 
-    public static boolean register(BufferedReader br) {
+    private static boolean register(BufferedReader br) {
         try {
             boolean UN = false, PW = false;
 
@@ -75,26 +81,30 @@ public class Authenticate {
             else
                 System.out.println(RED + "Username has invalid characters!");
 
-            System.out.println("Enter a Password then press ENTER.");
-            System.out.println(PURPLE
-                    + "Guidelines: \n- Password must not be commonly used \n- Password must be between 8 and 64 characters"
-                    + WHITE);
-            String password = br.readLine();
-            System.out.print(DELETE); // clear the screen
-            System.out.println("Enter your Password again then press ENTER");
-            String passwordConf = br.readLine();
-            System.out.print(DELETE); // clear the screen
+            String password = "";
 
-            if (lengthp(password)) // 8 - 64 chars
-                if (notBanned(password)) // must not match in the banned passwords list
-                    if (password.equals(passwordConf))
-                        PW = true;
+            if (UN) { // can do password check if username is ok
+                System.out.println("Enter a Password then press ENTER.");
+                System.out.println(PURPLE
+                        + "Guidelines: \n- Password must not be commonly used \n- Password must be between 8 and 64 characters"
+                        + WHITE);
+                password = br.readLine();
+                System.out.print(DELETE); // clear the screen
+                System.out.println("Enter your Password again then press ENTER");
+                String passwordConf = br.readLine();
+                System.out.print(DELETE); // clear the screen
+
+                if (lengthp(password)) // 8 - 64 chars
+                    if (notBanned(password)) // must not match in the banned passwords list
+                        if (password.equals(passwordConf))
+                            PW = true;
+                        else
+                            System.out.println(RED + "Passwords do not match!");
                     else
-                        System.out.println(RED + "Passwords do not match!");
+                        System.out.println(RED + "Password is too common!");
                 else
-                    System.out.println(RED + "Password is too common!");
-            else
-                System.out.println(RED + "Password must be between 8 and 64 characters!");
+                    System.out.println(RED + "Password must be between 8 and 64 characters!");
+            }
 
             if (PW && UN) { // if password and username are both valid
                 addUser(username, password); // salt and hash password & put in database
@@ -111,7 +121,7 @@ public class Authenticate {
         return false; // just incase
     }
 
-    public static boolean login(BufferedReader br) {
+    private static boolean login(BufferedReader br) {
         try {
             System.out.println("Enter your Username then press ENTER.");
             String username = br.readLine();
@@ -136,7 +146,7 @@ public class Authenticate {
     }
 
     // USERNAME CHECKS //
-    public static boolean charset(String username) {
+    private static boolean charset(String username) {
         boolean allCharsValid = true;
         for (char c : username.toCharArray()) {
             if (notvalid(c)) {
@@ -147,34 +157,68 @@ public class Authenticate {
         return allCharsValid;
     }
 
-    public static boolean notvalid(char c) {
+    private static boolean notvalid(char c) {
         if ((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c == 95))
             return false; // is a 0-9 or A-Z or a-z or a _
         return true; // char isn't valid
     }
 
-    public static boolean lengthu(String username) {
+    private static boolean lengthu(String username) {
         if (username.length() >= 2 && username.length() <= 20)
             return true;
         return false;
     }
 
-    public static boolean noProfanity(String username) {
-        return true;
+    private static boolean noProfanity(String username) {
+        username = username.replaceAll("1", "i"); // remove leetspeak
+        // username = username.replaceAll("!", "i");
+        username = username.replaceAll("3", "e");
+        username = username.replaceAll("4", "a");
+        // username = username.replaceAll("@", "a");
+        username = username.replaceAll("5", "s");
+        username = username.replaceAll("7", "t");
+        username = username.replaceAll("0", "o");
+        username = username.replaceAll("9", "g");
+
+        username = username.replaceAll("_", ""); // remove underscores
+
+        // go through the badwords list
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("src/Word_Filter.csv"));
+            String line = br.readLine();
+            String[] split = line.split(",");// split and edit line
+
+            while (line != null) { // while not finished reading
+                if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
+                    br.close();
+                    return true;
+                }
+                line = br.readLine();
+                if(line != null)
+                    split = line.split(",");// split and edit line
+            }
+            br.close();
+        } catch (Exception e) {
+            if(!(e instanceof ArrayIndexOutOfBoundsException)){ // an arrayindexoutofbounds is expected
+                System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 
-    public static boolean notInDatabase(String username) {
+    private static boolean notInDatabase(String username) {
         return true;
     }
 
     // PASSWORD CHECKS //
-    public static boolean lengthp(String password) {
+    private static boolean lengthp(String password) {
         if (password.length() >= 8 && password.length() <= 64)
             return true;
         return false;
     }
 
-    public static boolean notBanned(String password) {
+    private static boolean notBanned(String password) {
         try {
             BufferedReader br = new BufferedReader(new FileReader("src/rockyou.txt"));
             String line = br.readLine();
@@ -193,17 +237,57 @@ public class Authenticate {
         return true;
     }
 
+    // HASHING //
+    private static String hash(String password) {
+        byte[] salt = generateSalt16Byte();
+        String hash = base64Encoding(generateArgon2id(password, salt));
+        return hash;
+    }
+
+    private static byte[] generateSalt16Byte() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] salt = new byte[16];
+        secureRandom.nextBytes(salt);
+        return salt;
+    }
+
+    private static byte[] generateArgon2id(String password, byte[] salt) {
+        int opsLimit = 4;
+        int memLimit = 1024 * 64;
+        int outputLength = 32; // 32 bytes is reccommended
+        int parallelism = 2;
+        /*
+         * Argon2Parameters.Builder builder = new
+         * Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+         * .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+         * .withIterations(opsLimit)
+         * .withMemoryAsKB(memLimit)
+         * .withParallelism(parallelism)
+         * .withSalt(salt);
+         * Argon2BytesGenerator gen = new Argon2BytesGenerator();
+         * gen.init(builder.build());
+         */
+        byte[] result = new byte[outputLength];
+        // gen.generateBytes(password.getBytes(StandardCharsets.UTF_8), result, 0,
+        // result.length);
+        return result;
+    }
+
+    private static String base64Encoding(byte[] username) {
+        return Base64.getEncoder().encodeToString(username);
+    }
+
     // DATABASE STUFF //
-    public static void addUser(String username, String password) {
+    private static void addUser(String username, String password) {
 
     }
 
-    public static boolean detailsCorrect(String username, String password) {
+    private static boolean detailsCorrect(String username, String password) {
         return false;
     }
 
     // TIMER //
-    public static void timer() {
+    private static void timer() {
         try {
             int count = 30;
             System.out.println("Timeout: " + count + " Seconds");
