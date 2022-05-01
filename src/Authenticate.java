@@ -1,7 +1,7 @@
 package src;
 
-//import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
-//import org.bouncycastle.crypto.params.Argon2Parameters;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.params.Argon2Parameters;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -182,7 +182,8 @@ public class Authenticate {
 
         username = username.replaceAll("_", ""); // remove underscores
 
-        // remove repeating u's or i's
+        // remove repeating letters to one instance
+        // check then do again with repeating letters to two instances
 
         // go through the badwords list
         try {
@@ -191,18 +192,17 @@ public class Authenticate {
             String[] split = line.split(",");// split and edit line
 
             while (line != null) { // while not finished reading
-                if(split.length == 1)
+                if (split.length == 1)
                     if (username.contains(split[0])) { // if matches
                         br.close();
                         return false;
-                    }
-                else if(split.length == 2)
-                    if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
-                        br.close();
-                        return false;
-                    }
+                    } else if (split.length == 2)
+                        if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
+                            br.close();
+                            return false;
+                        }
                 line = br.readLine();
-                if(line != null)
+                if (line != null)
                     split = line.split(","); // split and edit line
             }
             br.close();
@@ -216,9 +216,9 @@ public class Authenticate {
     private static boolean notInDatabase(String username) {
         try {
             File f = new File("src/database.csv"); // check if cvs exists, if not the create it
-            if(!f.exists())
+            if (!f.exists())
                 return true;
-            
+
             // try open csv database and search for each split[0]
             BufferedReader br = new BufferedReader(new FileReader("src/database.csv"));
             String line = br.readLine();
@@ -230,17 +230,17 @@ public class Authenticate {
                     return false;
                 }
                 line = br.readLine();
-                if(line != null)
+                if (line != null)
                     split = line.split(","); // split and edit line
             }
             br.close();
-            
+
             return true;
-            
+
         } catch (Exception e) {
             System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
             e.printStackTrace();
-            //return true; // no csv database yet so exception thrown
+            // return true; // no csv database yet so exception thrown
         }
         return true;
     }
@@ -275,8 +275,8 @@ public class Authenticate {
     private static String hash(String password) {
         byte[] salt = generateSalt16Byte();
         String hash = base64Encoding(generateArgon2id(password, salt));
-        //return hash;
-        return password; // temporary
+        // return hash;
+        return hash; // temporary
     }
 
     private static byte[] generateSalt16Byte() {
@@ -291,20 +291,19 @@ public class Authenticate {
         int memLimit = 1024 * 64;
         int outputLength = 32; // 32 bytes is reccommended
         int parallelism = 2;
-        /*
-         * Argon2Parameters.Builder builder = new
-         * Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
-         * .withVersion(Argon2Parameters.ARGON2_VERSION_13)
-         * .withIterations(opsLimit)
-         * .withMemoryAsKB(memLimit)
-         * .withParallelism(parallelism)
-         * .withSalt(salt);
-         * Argon2BytesGenerator gen = new Argon2BytesGenerator();
-         * gen.init(builder.build());
-         */
+
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
+                .withIterations(opsLimit)
+                .withMemoryAsKB(memLimit)
+                .withParallelism(parallelism)
+                .withSalt(salt);
+        Argon2BytesGenerator gen = new Argon2BytesGenerator();
+        gen.init(builder.build());
+
         byte[] result = new byte[outputLength];
-        // gen.generateBytes(password.getBytes(StandardCharsets.UTF_8), result, 0,
-        // result.length);
+        gen.generateBytes(password.getBytes(StandardCharsets.UTF_8), result, 0,
+                result.length);
         return result;
     }
 
@@ -316,9 +315,9 @@ public class Authenticate {
     private static void addUser(String username, String password) {
         try {
             File f = new File("src/database.csv"); // check if cvs exists, if not the create it
-            if(!f.exists())
+            if (!f.exists())
                 f.createNewFile();
-                
+
             FileWriter fw = new FileWriter(f, true); // append mode
             BufferedWriter bw = new BufferedWriter(fw);
 
@@ -335,9 +334,9 @@ public class Authenticate {
     private static boolean detailsCorrect(String username, String password) {
         try {
             File f = new File("src/database.csv"); // check if cvs exists, if not the create it
-            if(!f.exists())
+            if (!f.exists())
                 return false;
-            
+
             // try open csv database and search for each split[0]
             BufferedReader br = new BufferedReader(new FileReader("src/database.csv"));
             String line = br.readLine();
@@ -349,11 +348,11 @@ public class Authenticate {
                     return true;
                 }
                 line = br.readLine();
-                if(line != null)
+                if (line != null)
                     split = line.split(","); // split and edit line
             }
             br.close();
-            
+
             return false;
         } catch (Exception e) {
             System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
