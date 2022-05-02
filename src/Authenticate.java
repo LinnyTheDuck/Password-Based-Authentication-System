@@ -1,5 +1,6 @@
 package src;
 
+//import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.params.Argon2Parameters;
 
@@ -309,12 +310,15 @@ public class Authenticate {
         return true;
     }
 
-    // HASHING //
-    private static String hash(String password) {
+    // GENERATE HASHING //
+    private static String generateHash(String password) {
         byte[] salt = generateSalt16Byte();
-        //String hash = base64Encoding(generateArgon2id(password, salt));
-        //return hash;
-        return password; // temporary
+        String salt64 = base64Encoding(salt);
+        //Argon2PasswordEncoder encoder = new Argon2PasswordEncoder();
+        String hash = "$argon2id$v=13$m=65536,t=16,p=2$" + salt64 + "$" + base64Encoding(generateArgon2id(password, salt));
+        //encoder.encode(password);
+        return hash;
+        //return password; // temporary
     }
 
     private static byte[] generateSalt16Byte() {
@@ -345,10 +349,32 @@ public class Authenticate {
         return result;
     }
 
-    private static String base64Encoding(byte[] username) {
-        return Base64.getEncoder().encodeToString(username);
+    private static String base64Encoding(byte[] input) {
+        return Base64.getEncoder().encodeToString(input);
     }
 
+    // CHECK HASHING //
+    private static boolean hashMatch(String password, String input){
+        String[] split = input.split("\\$");
+        //System.out.println(split[0]);
+        byte[] salt = base64Decoding(split[1]);
+        String hash = base64Encoding(generateArgon2id(password, salt));
+        if(hash.equals(split[2]))
+            return true;
+        else
+            return false;
+    }
+
+    private static byte[] base64Decoding(String input) {
+        try {
+            return Base64.getDecoder().decode(input.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            System.err.println(BLUE + "You caught an exception. Well done for hacking the code");
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     // DATABASE STUFF //
     private static void addUser(String username, String password) {
         try {
@@ -359,7 +385,7 @@ public class Authenticate {
             FileWriter fw = new FileWriter(f, true); // append mode
             BufferedWriter bw = new BufferedWriter(fw);
 
-            password = hash(password); // hash password
+            password = generateHash(password); // hash password
             bw.write(username + "," + password); // insert username and password
             bw.newLine();
             bw.close();
@@ -381,7 +407,8 @@ public class Authenticate {
             String[] split = line.split(","); // split and edit line
 
             while (line != null) { // while not finished reading
-                if (username.equals(split[0]) && hash(password).equals(split[1])) { // if matches
+                //System.out.println(hash(password)); // for debug
+                if (username.equals(split[0]) && hashMatch(password, split[3])) { // if matches
                     br.close();
                     return true;
                 }
