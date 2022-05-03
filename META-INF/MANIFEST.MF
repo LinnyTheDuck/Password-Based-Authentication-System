@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Main-class: src.Authenticate
-Class-Path: lib/bcprov-ext-jdk15to18-171.jar
