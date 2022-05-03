@@ -1,6 +1,8 @@
 src/*.class
 Reports/*
 !Reports/*.pdf
-src/rockyou.txt
+src/rockyou.*
 run.jar
 src/database.csv
+META-INF/
+.vscode/
