@@ -203,15 +203,25 @@ public class Authenticate {
             String[] split = line.split(",");// split and edit line
 
             while (line != null) { // while not finished reading
-                if (split.length == 1)
+                if (split.length == 1){
                     if (username.contains(split[0])) { // if matches
                         br.close();
                         return false;
-                    } else if (split.length == 2)
-                        if (username.contains(split[0]) && !username.contains(split[1])) { // if matches
-                            br.close();
+                    }
+                } else if (split.length >= 2){
+                    if(username.contains(split[0])){ // blacklist is found
+                        boolean wl = false;
+                        for(int i = 1; i < split.length; i++){
+                            if(username.contains(split[i])){
+                                wl = true;
+                            }
+                        }
+                        if(!wl){
+                            br.close(); // no whitelisted words found
                             return false;
                         }
+                    }
+                }
                 line = br.readLine();
                 if (line != null)
                     split = line.split(","); // split and edit line
